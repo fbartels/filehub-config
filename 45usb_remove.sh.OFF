@@ -14,13 +14,12 @@ if [ -e /tmp/backup.pid ]; then
 fi
 
 # Turn off swap if the store drive is removed
-STORE_DIR=/.internal
-CONFIG_DIR="$STORE_DIR"/donottouch
+STORE_DIR=.vst
 
 # Check if a USB drive is attached which is initialize for storing monitoring data
 check_storedrive() {
         while read device mountpoint fstype remainder; do
-        if [ ${device:0:7} == "/dev/sd" -a -e "$mountpoint$CONFIG_DIR"/rsync ];then
+        if [ ${device:0:7} == "/dev/sd" -a -e "$mountpoint/$STORE_DIR"/rsync ];then
                 return 1
         fi
         done < /proc/mounts
@@ -30,7 +29,7 @@ check_storedrive() {
 # If the store drive is no longer attached, turn off swap
 check_storedrive
 if [ $? -eq 0 ]; then
-    swapoff "$mountpoint$CONFIG_DIR"/swapfile
+    swapoff "$mountpoint/$STORE_DIR"/swapfile
 fi
 
 #END_MOD
