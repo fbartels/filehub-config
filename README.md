@@ -1,117 +1,16 @@
-## RAVpower WD02 modifications ##
+# Ravpower WD03 enhancements
 
-When I had purchased a [http://www.ravpower.com/catalog/product/search/filehub](RAVPower FileHub)
-[http://www.ravpower.com/rp-wd02-filehub-6000mah-power-bank-black.html](WD02), I quickly found that it wouldn't be
-safe to operate in a public network, with lots of open ports, `telnet` being quite prominent.
+My very own EnterRouterMode.sh based on the work of [digidem](https://github.com/digidem/filehub-config) and [steve8x8](https://github.com/steve8x8/filehub-config). I will try to merge upstream changes, but focus on mobile file handling and usability.
 
-There was a [https://web.archive.org/web/20141112135713/http://www.isartor.org/wiki/Securing_your_RavPower_Filehub_RP-WD01](Wiki page "**Securing your RavPower Filehub RP-WD01**" on http://www.isartor.org), and soon thereafter I found
-[https://github.com/digidem/filehub-config](the original `filehub-config`), which was the starting
-point for my own modifications.
-
-I found that (on my WD02 - which is somewhat different from the WD01, details to be investigated)
-some of the code snippets ("*scriptlets*") didn't work, and that they were combined in "some" order:
-   * the name of the ethernet interface was wrong (that seems to be one of those differences)
-   * the firewall would not be modified if the uplink was enabled/disabled
-   * there was no IPv6 support
-   * something didn't work with swap
-   * a few scriptlets I didn't (and still don't) understand
-
-What I did:
-   * add prefix numbers for proper ordering of scriptlets
-   * disable part of the scriptlets (in particular, the ones dealing with USB storage)
-   * change makefile to make use of scriptlet numbering, and add comments to show "where this part came from"
-   * add a new ntp.cfg for use in Europe
-   * use `/.internal/donottouch/` instead of `/monitoreo/no_tocar/`; /.vst/swapfile to mimic recent FWs
-   * debug, and change the firewall code, and the swap code
-   * add logging (write all output next to the script)
-   * patch /etc/*passwd to re-allow root logins
-   * LEDs blink while `EnterRouterMode.sh` script is run - works for my WD02, need feedback for other devices
-      * (In `telnet` console, run `/usr/sbin/pioctl {internet,status,wifi} {2,3}` - what happens?)
-   * Add a `ChangePassword.sh` script that syncs encrypted passwords in multiple places (to be run in a `telnet` session)
-
-This has been tested with firmwares up to 2.000.014, I didn't upgrade further yet since later fw versions may have telnetd disabled (or worse)
-and therefore appreciate your feedback.
-
-If you have a copy of previous firmware versions for WD01, WD02 or WD03 (or similar hardware), please contact me
-(steve8x8 at googlemail).
-
-Changes have been submitted to the original author but not incorporated so far, and since this fork has diverged
-a lot, this will perhaps never happen anymore.
+## Nice to know:
+- telnet login is possible after script run. Password for user root is 20080826. (Login is also possible with the admin user and password set from webinterface).
+- password for the root user can be changed with ```ChangeRootPassword.sh```.
+- all changes to /etc/ have to be made permanent through execution of ```/usr/sbin/etc_tools p```.
+- the device has a "hidden" WebDAV service. It can be reached via ```http://10.10.10.254/data```. Credentials are like in the webinterface.
 
 ---
+Following are the relevant parts of the original readme:
 
-### Findings about firmware upgrades ###
-
-** This is based on a couple of tools which may be malfunctioning, please check yourself.**
-
-#### WD01 ####
-
-   * __anyone?__
-      * seen firmwares: 2.000.014 2.000.020 2.000.030
-
-#### WD02 ####
-
-   * __feedback welcome__
-      * seen firmwares: 2.000.002 2.000.014 2.000.020
-
-#####WD02 2.000.014 vs 2.000.002:#####
-   * `/etc/telnetflag` was introduced, but handled in `/etc/initsh` to enable `root` shells
-   * `telnetd` started by `/etc/rc.d/rc` if no file `/etc/checktelnetflag` or if file `/etc/telnetflag`
-   * removed file `/etc/update/update.cfg` referring to IP 114.112.95.106:80, used by `/usr/sbin/au`
-
-#####WD02 2.000.020 vs 2.000.014:#####
-   * implements some firewall features (and even has `-m state --state RELATED,ESTABLISHED`)
-      * --this possibly makes the `10firewall.sh` scriptlet obsolete (anyone can confirm?)--
-      * not sure whether the setting persists over dis-/reconnect of WAN port
-      * someone confirm that `/sbin/netinit.sh` isn't buggy?
-   * `root` shell is now `/sbin/nologin` instead of `/bin/sh`
-      * `ChangeRootPassword.sh` fixes this
-      * `02enabletelnet.sh` scriptlet fixes it too
-   * apparently, *removal* of a file `/etc/telnetflag` will enable a `telnetd` *once* (file will be back)
-      * this may be true on first start
-      * separate set of passwords in `/etc/telnet{passwd,shadow}` but unused
-      * it might make sense to modify `/etc/init.d/opentelnet.sh` (or restore from .014)
-   * NTP client now uses up to 4 servers (in `/etc/ntp/ntp.cfg`, separated by `:`)
-
-#### WD03 ####
-
-   * __anyone?__
-      * seen firmwares: 2.000.016 (similar to F800 2.000.064)
-
-#### Known bugs ####
-
-   * `minidlna` process (writing to `/data/UsbDisk1/Volume1/.vst/i4dlna/i4dlna.db`) isn't properly ended, leaving an unclean fs
-      * address by adding a `/etc/rc.d/rc[06].d/K83minidlna` script?
-   * `/sbin/shutdown h` invokes `hdparm -a /dev/sda` - why?
-   * ...
-
----
-
-Future plans:
-   * support newer fw releases (when detailed info is available)
-   * work for WD01 and WD03 (and perhaps future hardware) - need detailed info
-   * think about supporting a USB 3G modem (???)
-   * ... (suggestions welcome)
-
----
-
-The original README follows:
-
----
-
-RAVPower Automation
-===================
-
-This collection of scripts automate functionality for copying and backing up files using a [RAVPower Filehub](http://www.ravpower.com/ravpower-rp-wd01-filehub-3000mah-power-bank.html).
-
-- [x] Change the default password
-- [x] Block external network access
-- [x] Copy files from SD Card to USB drive automatically
-- [ ] Rename & organize files using EXIF data
-- [x] Backup / sync between two USB drives
-- [x] Add a swap file on a USB drive
-- [ ] Allow import of [ODK Collect](http://opendatakit.org/use/collect/) data from smart phones over USB
-- [ ] Allow import of [ODK Collect](http://opendatakit.org/use/collect/) data from smart phones over wifi
 
 How to hack the Filehub embedded Linux
 --------------------------------------
@@ -193,16 +92,3 @@ Renaming with EXIF
 ------------------
 
 I would like photo filenames to be unique, so we can use them as a UUID. The best way would be to read the EXIF capture date, and prepend that to the filename. Although it might be possible to do that with just the file creation date and time. To use EXIF we would need to cross-compile an EXIF utility for the MIPS architecture used in the RavPower.
-
-ODK Collect Imports
--------------------
-
-We are using [ODK Collect](http://opendatakit.org/use/collect/) for data collection. This Android app stores data in a folder on the phone storage, and allows for sending that info via a multi-part form submission. There are 3 options for getting that data onto the filehub:
-
-1. Modify the [form submission code](https://code.google.com/p/opendatakit/source/browse/src/org/odk/collect/android/tasks/InstanceUploaderTask.java?repo=collect) in ODK collect so that instead of a multipart form upload, it uploads the form as an XML file to the WebDav server on the RavPower. The Ravpower can be configured so that the ODK server address will redirect locally when no internet connection is present.
-
-2. Write a small CGI script that can run on the RavPower to accept a multi-part form submission (containing form XML and associated media/photos). It would need to rename the files with the form submission UUID. Could face memory and processing speed limitations.
-
-3. Transfer the data via a USB connection. Android >4.0 only connects via MTP, which varies in implmentation in Android. The best seems to be [go-mtpfs](https://github.com/hanwen/go-mtpfs) which would need to be cross-compiled with GO for MIPS archetecture, which seems is possible. All libraries would need to be statically linked. This is potentially the most reliable solution.
-
- 
