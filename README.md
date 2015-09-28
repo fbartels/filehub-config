@@ -70,25 +70,7 @@ If more than 9999 photos are taken with a camera, filenames will be reused. Simi
 
 When the SD card or USB drive is removed, we kill the rsync process, otherwise it hangs around.
 
-Backup between two USB hard drives
-----------------------------------
-
-If a second drive is attached with a folder "Backup" then an automatic backup process will begin. Each backup drive is linked to the original drive via the original drive serial number. e.g. if you have two drives with original files and one backup drive for each, it will not backup to the wrong drive because it will detect the serial. The link is created the first time you create the backup, by writing a file ".backup_id" to the backup folder.
-
-At this stage older versions and deleted files are not kept. The backup drive is an exact mirror of the original drive. Backups are created via rsync with the following command:
-
-```sh
-rsync -vrm --size-only --delete-during --exclude ".?*" --partial-dir "$partial_dir" --exclude "swapfile" --log-file /tmp/rsync_log "$source_dir"/ "$target_dir"
-```
-
-Comments and suggestions for the rsync options are most welcome!
-
 Swap file
 ---------
 
 The RavPower Filehub only has 28Mb of memory, and about 2Mb of free memory. Rsync needs around [100 bytes for each file](http://rsync.samba.org/FAQ.html#4). To avoid out of memory issues we create a 64Mb swapfile on the USB drive when it is connected. This appears to speed up rsync and *should* avoid memory issues. I have not yet tested with thousands of files.
-
-Renaming with EXIF
-------------------
-
-I would like photo filenames to be unique, so we can use them as a UUID. The best way would be to read the EXIF capture date, and prepend that to the filename. Although it might be possible to do that with just the file creation date and time. To use EXIF we would need to cross-compile an EXIF utility for the MIPS architecture used in the RavPower.
