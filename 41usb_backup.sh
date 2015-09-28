@@ -27,7 +27,6 @@ echo $$ > /tmp/backup.pid
 
 SD_MOUNTPOINT=/data/UsbDisk1/Volume1
 STORE_DIR=.vst
-BACKUP_DIR=sd-backup
 PHOTO_DIR=sd-import
 MEDIA_REGEX=".*\.\(jpg\|gif\|png\|jpeg\|mov\|avi\|wav\|mp3\|aif\|wma\|wmv\|asx\|asf\|m4v\|mp4\|mpg\|3gp\|3g2\|crw\|cr2\|nef\|dng\|mdc\|orf\|sr2\|srf\)"
 
@@ -64,33 +63,12 @@ check_storedrive() {
         return 0
 }
 
-check_backupdrive() {
-        while read device mountpoint fstype remainder; do
-        if [ ${device:0:7} == "/dev/sd" -a -e "$mountpoint/$BACKUP_DIR" ];then
-                backup_mountpoint="$mountpoint"
-                local backupid_file
-                backup_id_file="$mountpoint/$BACKUP_DIR"/.backup_id
-                if [ -e $backup_id_file ]; then
-                        backup_id=`cat $backup_id_file`
-                elif [ $storedrive -eq 1 ]; then
-                        backup_id="$store_id"
-                        echo "$backup_id" > $backup_id_file
-                fi
-                return 1
-        fi
-        done < /proc/mounts
-        return 0
-}
-
 # If no SD card is inserted, just exit.
 check_sdcard
 sdcard=$?
 
 check_storedrive
 storedrive=$?
-
-check_backupdrive
-backupdrive=$?
 
 # If both a valid store drive and SD card are mounted,
 # copy the SD card contents to the store drive
@@ -130,21 +108,6 @@ if [ $sdcard -eq 1 -a $storedrive -eq 1 ];then
                 fi
         else
                 echo "SD copy was interrupted" >> /tmp/usb_add_info
-        fi
-fi
-
-# If both a valid store drive and a matching backup drive are attached,
-# backup the store drive to the backup drive
-if [ $storedrive -eq 1 -a $backupdrive -eq 1 -a "$backup_id" == "$store_id" ]; then
-        source_dir="$store_mountpoint/$STORE_DIR"
-        target_dir="$backup_mountpoint/$BACKUP_DIR"
-        partial_dir="$store_mountpoint/$PHOTO_DIR"/incoming/.partial
-        echo "Backing up data store to $target_dir" >> /tmp/usb_add_info
-        rsync -vrm --size-only --delete-during --exclude ".?*" --partial-dir "$partial_dir" --exclude "swapfile" --log-file /tmp/rsync_log "$source_dir"/ "$target_dir"
-        if  [ $? -eq 0 ]; then
-                echo "Backup complete" >> /tmp/usb_add_info
-        else
-                echo "Backup failed" >> /tmp/usb_add_info
         fi
 fi
 
