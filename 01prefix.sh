@@ -10,10 +10,3 @@ echo Running $0 from `pwd` >  $0.out
 # ------------------------------------- #
 
 export ERM_ROOT=`echo $0 | sed -e 's~/\w*$~~'`
-
-# start blinking LEDs
-/usr/sbin/pioctl internet 2
-sleep 0.2
-/usr/sbin/pioctl status 2
-sleep 0.2
-/usr/sbin/pioctl wifi 2
