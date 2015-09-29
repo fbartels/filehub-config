@@ -52,7 +52,7 @@ check_sdcard() {
 # Check if a USB drive is attached which is initialize for storing monitoring data
 check_storedrive() {
         while read device mountpoint fstype remainder; do
-        if [ ${device:0:7} == "/dev/sd" -a -e "$mountpoint$CONFIG_DIR"/rsync ];then
+        if [ ${device:0:7} == "/dev/sd" -a -e "$mountpoint/$STORE_DIR"/rsync ];then
                 # Add the store dir (containing rsync binary) to the PATH
                 export PATH="$mountpoint/$STORE_DIR":$PATH
                 store_mountpoint="$mountpoint"
