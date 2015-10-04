@@ -88,7 +88,7 @@ if [ $sdcard -eq 1 -a $storedrive -eq 1 ];then
 	# Copy the files from the sd card to the target dir, 
 	# Uses filename and size to check for duplicates
 	echo "Copying SD card to $incoming_dir" >> /tmp/usb_add_info
-	rsync -vrm --size-only --log-file /tmp/rsync_log --partial-dir "$partial_dir" --exclude ".?*" "$SD_MOUNTPOINT"/DCIM/ "$target_dir"
+	rsync -vrtm --size-only --modify-window=2 --remove-source-files --log-file /tmp/rsync_log --partial-dir "$partial_dir" --exclude ".?*" "$SD_MOUNTPOINT"/DCIM/ "$target_dir"
 fi
 
 # Write memory buffer to disk
