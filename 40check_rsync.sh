@@ -1,6 +1,6 @@
 # Will check if rsync is available and can be used on the data store drive.
 # For rsync to work you have to manually copy the rsync binary to the .vst dir.
-# (a copy can be found in the build dir)
+# (a copy can be found in the build dir).
 
 STORE_DIR=.vst
 
